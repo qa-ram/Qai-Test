@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowRight, Upload, Link as LinkIcon, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Upload, Link as LinkIcon, AlertCircle, FileText, CheckCircle2, MessageSquare } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
   const [url, setUrl] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [designFile, setDesignFile] = useState<File | null>(null);
 
@@ -16,21 +17,11 @@ export default function Home() {
     if (!url) return;
 
     setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/run-qa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
-
-      if (data.jobId) {
-        router.push(`/results/${data.jobId}`);
-      }
-    } catch (err) {
-      console.error("Failed to start QA test:", err);
-      setIsSubmitting(false);
+    const params = new URLSearchParams({ url });
+    if (instructions.trim()) {
+      params.set('instructions', instructions.trim());
     }
+    router.push(`/results/audit?${params.toString()}`);
   };
 
   return (
@@ -135,10 +126,25 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Additional Instructions */}
+            <div className="space-y-2">
+              <label htmlFor="instructions" className="text-sm font-medium text-foreground flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-green-400" />
+                Additional Instructions (Optional)
+              </label>
+              <textarea
+                id="instructions"
+                placeholder="Type specific flows, requirements, or things you want us to test..."
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="w-full p-4 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-foreground placeholder:text-muted-foreground min-h-[100px] resize-y"
+              />
+            </div>
+
             <div className="pt-4 border-t border-border flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <AlertCircle className="w-4 h-4" />
-                Tests run in isolated browser instances and AI agents.
+                AI agents run real user journeys and flag anomalies.
               </div>
               <button
                 type="submit"
